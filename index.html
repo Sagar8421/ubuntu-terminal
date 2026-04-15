@@ -3,26 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Windows Web Terminal - React Terminal Emulator</title>
+    <title>Django Terminal Simulator (No Backend)</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            user-select: none; /* Prevent accidental text selection on double-click, but text can still be selected */
         }
-
         body {
             background: linear-gradient(145deg, #0a0c10 0%, #0f1117 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
             padding: 20px;
         }
-
-        /* Windows Terminal Inspired Frame */
         .terminal-container {
             width: 95vw;
             max-width: 1300px;
@@ -34,11 +30,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            backdrop-filter: blur(0px);
-            transition: all 0.2s;
         }
-
-        /* Custom title bar (minimal) */
         .terminal-header {
             background: #1e1e1e;
             padding: 8px 16px;
@@ -47,72 +39,48 @@
             gap: 12px;
             border-bottom: 1px solid #2d2d2d;
         }
-
         .window-controls {
             display: flex;
             gap: 8px;
         }
-
         .win-btn {
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            transition: 0.1s;
         }
-
         .win-btn.close { background: #e81123; }
         .win-btn.minimize { background: #f5a623; }
         .win-btn.maximize { background: #28a745; }
-
         .terminal-title {
             color: #cccccc;
             font-size: 13px;
-            letter-spacing: 0.5px;
-            font-family: 'Segoe UI', sans-serif;
             flex: 1;
             text-align: center;
-            margin-right: 60px;
+            font-family: 'Segoe UI', sans-serif;
         }
-
-        /* Main terminal area */
         .terminal-screen {
             flex: 1;
-            background: #0C0C0C;
-            display: flex;
-            flex-direction: column;
             overflow-y: auto;
             padding: 12px 16px;
-            font-family: 'Cascadia Code', 'Consolas', monospace;
             font-size: 14px;
             line-height: 1.5;
             scroll-behavior: smooth;
         }
-
-        /* Custom scrollbar (Windows Terminal vibe) */
         .terminal-screen::-webkit-scrollbar {
             width: 8px;
         }
-
         .terminal-screen::-webkit-scrollbar-track {
             background: #1e1e1e;
         }
-
         .terminal-screen::-webkit-scrollbar-thumb {
             background: #4e4e4e;
             border-radius: 4px;
         }
-
-        .terminal-screen::-webkit-scrollbar-thumb:hover {
-            background: #6e6e6e;
-        }
-
-        /* History entries */
         .terminal-entry {
             margin-bottom: 4px;
             white-space: pre-wrap;
             word-break: break-all;
         }
-
         .command-line {
             display: flex;
             flex-wrap: wrap;
@@ -120,19 +88,14 @@
             gap: 8px;
             color: #f0f0f0;
         }
-
         .prompt {
             color: #3b9b6e;
             font-weight: 500;
-            text-shadow: 0 0 2px #1f8a5c;
             white-space: nowrap;
         }
-
         .command-text {
             color: #dcdcdc;
-            word-break: break-all;
         }
-
         .output-line {
             color: #bbbbbb;
             margin-left: 12px;
@@ -141,13 +104,13 @@
             margin-top: 2px;
             margin-bottom: 2px;
         }
-
         .error-line {
             color: #f48771;
             border-left-color: #d16949;
         }
-
-        /* Input row (always at bottom) */
+        .sim-server-line {
+            color: #8bc34a;
+        }
         .input-line {
             display: flex;
             align-items: center;
@@ -155,16 +118,12 @@
             background: #0C0C0C;
             padding: 8px 16px 12px 16px;
             border-top: 1px solid #202020;
-            font-family: 'Cascadia Code', 'Consolas', monospace;
-            font-size: 14px;
         }
-
         .input-prompt {
             color: #3b9b6e;
             font-weight: bold;
             white-space: nowrap;
         }
-
         .terminal-input {
             flex: 1;
             background: transparent;
@@ -175,92 +134,83 @@
             outline: none;
             caret-color: #3b9b6e;
         }
-
-        .terminal-input:focus {
-            outline: none;
+        .server-status {
+            background: #1e1e1e;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #aaa;
+            border-top: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
         }
-
-        /* status cursor effect */
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-
-        /* small helper */
-        .separator {
-            height: 1px;
-            background: #222;
-            margin: 6px 0;
+        .server-badge {
+            color: #f5a623;
         }
     </style>
-    <!-- React & ReactDOM CDN -->
     <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
-    <!-- Babel for JSX -->
     <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
-    // ---------- VIRTUAL FILE SYSTEM (Windows Style) ----------
-    // Structure: each node has type: 'dir' or 'file', children for dir, content for file.
+    // ---------- Virtual Django Project Filesystem ----------
     const createInitialVFS = () => ({
         type: 'dir',
         children: {
-            'Users': {
+            'manage.py': {
+                type: 'file',
+                content: `#!/usr/bin/env python
+"""Django's command-line utility."""
+import sys
+def main():
+    print("Django management script (simulated)")
+if __name__ == '__main__':
+    main()`
+            },
+            'requirements.txt': { type: 'file', content: 'Django==4.2.0\nasgiref==3.7.2\nsqlparse==0.4.4' },
+            'myproject': {
                 type: 'dir',
                 children: {
-                    'WebUser': {
-                        type: 'dir',
-                        children: {
-                            'Documents': { type: 'dir', children: {} },
-                            'Downloads': { type: 'dir', children: {} },
-                            'welcome.txt': { type: 'file', content: 'Welcome to Windows Web Terminal!\r\nYou can run commands like dir, cd, mkdir, type, and more.' },
-                            'sample.js': { type: 'file', content: 'console.log("Hello from virtual terminal");' }
-                        }
-                    }
+                    '__init__.py': { type: 'file', content: '' },
+                    'settings.py': { type: 'file', content: '"""Django settings"""\nSECRET_KEY="dummy"\nDEBUG=True\nALLOWED_HOSTS=["*"]' },
+                    'urls.py': { type: 'file', content: 'urlpatterns = []' },
+                    'wsgi.py': { type: 'file', content: 'application = None' }
                 }
             },
-            'Windows': {
+            'app1': {
                 type: 'dir',
                 children: {
-                    'System32': { type: 'dir', children: {} }
+                    '__init__.py': { type: 'file', content: '' },
+                    'models.py': { type: 'file', content: 'from django.db import models\n\nclass Item(models.Model):\n    name = models.CharField(max_length=100)' },
+                    'views.py': { type: 'file', content: 'from django.http import HttpResponse\n\ndef home(request):\n    return HttpResponse("Hello from app1")' }
                 }
-            },
-            'Program Files': { type: 'dir', children: {} },
-            'readme.md': { type: 'file', content: '# Web Terminal\r\nFull Windows terminal experience in browser.\r\nTry: help, dir, cd Documents, mkdir test, echo Hello!' }
+            }
         }
     });
 
-    // Helper: deep clone VFS (safe mutations)
     const cloneVFS = (vfs) => JSON.parse(JSON.stringify(vfs));
 
-    // Resolve path (array of segments) relative to current path array. Returns absolute path array or null if invalid.
-    const resolvePathSegments = (pathStr, currentPathArr) => {
+    // Path resolution (simple, works with / and \)
+    const resolvePath = (pathStr, currentPathArr) => {
         if (!pathStr || pathStr.trim() === "") return currentPathArr;
         let raw = pathStr.trim();
-        // handle root: '\' or 'C:\' or '/'
-        let isAbsolute = false;
-        if (raw.startsWith('\\') || raw.startsWith('/') || raw.match(/^[a-zA-Z]:\\/)) {
-            isAbsolute = true;
-            raw = raw.replace(/^[a-zA-Z]:\\/, '').replace(/^[\\/]/, '');
-        }
+        let isAbsolute = raw.startsWith('/') || raw.startsWith('\\');
         let parts = raw.split(/[\\/]/).filter(p => p !== "" && p !== ".");
         let working = isAbsolute ? [] : [...currentPathArr];
         for (let part of parts) {
             if (part === "..") {
                 if (working.length > 0) working.pop();
-                else return null; // can't go above root
-            } else if (part !== "." && part !== "") {
+                else return null;
+            } else if (part !== ".") {
                 working.push(part);
             }
         }
         return working;
     };
 
-    // Get node from VFS by path array (absolute from root)
-    const getNodeFromPath = (vfs, pathArr) => {
+    const getNode = (vfs, pathArr) => {
         let current = vfs;
         for (let seg of pathArr) {
             if (current.type !== 'dir') return null;
@@ -270,279 +220,254 @@
         return current;
     };
 
-    // Check if path exists and is directory
-    const isDirectory = (vfs, pathArr) => {
-        const node = getNodeFromPath(vfs, pathArr);
-        return node !== null && node.type === 'dir';
-    };
+    const formatPath = (pathArr) => pathArr.length ? '/' + pathArr.join('/') : '/';
 
-    // Create directory (immutable via clone)
-    const mkdirCommand = (vfs, currentPathArr, dirName) => {
-        if (!dirName || dirName.length === 0) return { success: false, newVfs: vfs, error: "Directory name required" };
-        if (dirName.includes('\\') || dirName.includes('/')) return { success: false, newVfs: vfs, error: "Invalid name - use simple name" };
-        const newVfs = cloneVFS(vfs);
-        let targetPath = [...currentPathArr];
-        let parentPath = targetPath;
-        let newDirPath = [...parentPath, dirName];
-        // check if already exists
-        const existing = getNodeFromPath(newVfs, newDirPath);
-        if (existing) return { success: false, newVfs: vfs, error: `Directory or file already exists: ${dirName}` };
-        let parentNode = getNodeFromPath(newVfs, parentPath);
-        if (!parentNode || parentNode.type !== 'dir') return { success: false, newVfs: vfs, error: "Parent path invalid" };
-        parentNode.children[dirName] = { type: 'dir', children: {} };
-        return { success: true, newVfs, error: null };
-    };
+    // Simulated server state
+    let serverRunning = false;
+    let serverPort = null;
+    let serverInterval = null;
+    let serverOutputLines = [];
 
-    // Remove directory (must be empty)
-    const rmdirCommand = (vfs, currentPathArr, dirName) => {
-        if (!dirName) return { success: false, newVfs: vfs, error: "Directory name required" };
-        const newVfs = cloneVFS(vfs);
-        let targetPath = [...currentPathArr, dirName];
-        const targetNode = getNodeFromPath(newVfs, targetPath);
-        if (!targetNode || targetNode.type !== 'dir') return { success: false, newVfs: vfs, error: `Directory not found: ${dirName}` };
-        if (Object.keys(targetNode.children).length > 0) return { success: false, newVfs: vfs, error: "Directory not empty" };
-        let parentPath = [...currentPathArr];
-        let parent = getNodeFromPath(newVfs, parentPath);
-        if (parent && parent.type === 'dir') {
-            delete parent.children[dirName];
-            return { success: true, newVfs, error: null };
-        }
-        return { success: false, newVfs: vfs, error: "Cannot remove" };
-    };
-
-    // Delete file
-    const delCommand = (vfs, currentPathArr, fileName) => {
-        if (!fileName) return { success: false, newVfs: vfs, error: "File name required" };
-        const newVfs = cloneVFS(vfs);
-        let targetPath = [...currentPathArr, fileName];
-        const targetNode = getNodeFromPath(newVfs, targetPath);
-        if (!targetNode || targetNode.type !== 'file') return { success: false, newVfs: vfs, error: `File not found: ${fileName}` };
-        let parentPath = [...currentPathArr];
-        let parent = getNodeFromPath(newVfs, parentPath);
-        if (parent && parent.type === 'dir') {
-            delete parent.children[fileName];
-            return { success: true, newVfs, error: null };
-        }
-        return { success: false, newVfs: vfs, error: "Cannot delete" };
-    };
-
-    // type (cat) command
-    const typeCommand = (vfs, currentPathArr, fileName) => {
-        let targetPath = [...currentPathArr, fileName];
-        const node = getNodeFromPath(vfs, targetPath);
-        if (!node) return { success: false, output: `File not found: ${fileName}` };
-        if (node.type !== 'file') return { success: false, output: `${fileName} is a directory` };
-        return { success: true, output: node.content };
-    };
-
-    // dir listing
-    const dirListing = (vfs, pathArr) => {
-        const node = getNodeFromPath(vfs, pathArr);
-        if (!node || node.type !== 'dir') return ["Directory not accessible."];
-        const children = node.children;
-        const entries = Object.keys(children);
-        if (entries.length === 0) return ["Directory is empty."];
-        const output = [];
-        output.push(` Volume in drive C is Windows`);
-        output.push(` Directory: ${pathArr.join('\\') || 'C:\\'}`);
-        output.push("");
-        for (let name of entries) {
-            const item = children[name];
-            const prefix = item.type === 'dir' ? "<DIR>" : "     ";
-            const size = item.type === 'file' ? (item.content?.length || 0) + " bytes" : "";
-            output.push(`${prefix}  ${name}   ${item.type === 'file' ? size : ''}`);
-        }
-        return output;
-    };
-
-    // ----- command processor core -----
-    const processCommand = (cmdLine, currentPathArr, vfsState) => {
-        if (!cmdLine.trim()) return { outputLines: [], newVfs: vfsState, newPath: currentPathArr, clearOnly: false };
-        const parts = cmdLine.trim().split(/\s+/);
+    // Command handlers (returns { outputLines, newVfs, newPath, serverAction? })
+    const handleCommand = (cmd, currentPathArr, vfs) => {
+        const parts = cmd.trim().split(/\s+/);
         const command = parts[0].toLowerCase();
         const args = parts.slice(1);
         let output = [];
-        let newVfs = vfsState;
+        let newVfs = vfs;
         let newPath = [...currentPathArr];
 
-        // HELP
-        if (command === "help") {
+        // Built-in help
+        if (command === 'help') {
             output = [
-                "Windows Web Terminal - Available commands:",
-                "  help                            Show this help",
-                "  dir / ls                        List directory contents",
-                "  cd <path>                       Change directory (.., \\, folder)",
-                "  mkdir <name>                    Create new directory",
-                "  rmdir <name>                    Remove empty directory",
-                "  del <file>                      Delete a file",
-                "  type <file> / cat <file>        Display file content",
-                "  echo <text>                     Print text",
-                "  clear / cls                     Clear terminal screen",
-                "  ver                             Show Windows version",
-                "  whoami                          Display current user",
-                "  hostname                        Computer name",
-                "  date / time                     Show system date/time",
-                "  exit                            Show exit message (demo)"
+                "Django Terminal Simulator - Available commands:",
+                "  help                               Show this help",
+                "  ls / dir                           List directory contents",
+                "  cd <dir>                           Change directory",
+                "  cat <file>                         Show file content",
+                "  django-admin startproject <name>   Create a new Django project",
+                "  python manage.py runserver [port]  Start simulated Django server",
+                "  python manage.py makemigrations    Simulate making migrations",
+                "  python manage.py migrate           Simulate applying migrations",
+                "  python manage.py shell              Enter simulated Django shell",
+                "  echo <text>                        Print text",
+                "  clear / cls                        Clear screen",
+                "  stopserver                         Stop the running server"
             ];
         }
-        // CLEAR
-        else if (command === "clear" || command === "cls") {
-            return { outputLines: [], newVfs, newPath, clearOnly: true };
+        else if (command === 'clear' || command === 'cls') {
+            return { outputLines: [], newVfs, newPath, clear: true };
         }
-        // DIR / LS
-        else if (command === "dir" || command === "ls") {
-            output = dirListing(newVfs, newPath);
+        else if (command === 'ls' || command === 'dir') {
+            const node = getNode(newVfs, newPath);
+            if (!node || node.type !== 'dir') output = ["Not a directory"];
+            else {
+                const items = Object.keys(node.children);
+                if (items.length === 0) output = ["(empty)"];
+                else output = items.map(name => {
+                    const type = node.children[name].type === 'dir' ? '<DIR>' : '    ';
+                    return `${type}  ${name}`;
+                });
+            }
         }
-        // CD
-        else if (command === "cd") {
+        else if (command === 'cd') {
             const target = args[0];
-            if (!target) {
-                output = [`Current directory: ${newPath.join('\\') || 'C:\\'}`];
-            } else {
-                const newPathArr = resolvePathSegments(target, newPath);
-                if (newPathArr === null) {
-                    output = [`Invalid path: ${target}`];
+            if (!target) output = [`Current: ${formatPath(newPath)}`];
+            else {
+                const newPathArr = resolvePath(target, newPath);
+                if (newPathArr === null) output = ["Invalid path"];
+                else {
+                    const node = getNode(newVfs, newPathArr);
+                    if (node && node.type === 'dir') newPath = newPathArr;
+                    else output = [`cd: ${target}: No such directory`];
+                }
+            }
+        }
+        else if (command === 'cat') {
+            const fileName = args[0];
+            if (!fileName) output = ["cat: missing file operand"];
+            else {
+                const targetPath = [...newPath, fileName];
+                const node = getNode(newVfs, targetPath);
+                if (!node || node.type !== 'file') output = [`File not found: ${fileName}`];
+                else output = [node.content];
+            }
+        }
+        else if (command === 'django-admin') {
+            if (args[0] === 'startproject' && args[1]) {
+                const projName = args[1];
+                if (getNode(newVfs, [...newPath, projName])) {
+                    output = [`Directory ${projName} already exists`];
                 } else {
-                    const targetNode = getNodeFromPath(newVfs, newPathArr);
-                    if (targetNode && targetNode.type === 'dir') {
-                        newPath = newPathArr;
-                        output = [];
-                    } else {
-                        output = [`Path not found: ${target}`];
-                    }
+                    newVfs = cloneVFS(newVfs);
+                    const parent = getNode(newVfs, newPath);
+                    if (parent && parent.type === 'dir') {
+                        parent.children[projName] = {
+                            type: 'dir',
+                            children: {
+                                'manage.py': { type: 'file', content: `#!/usr/bin/env python\n# Django manage.py stub for ${projName}` },
+                                `${projName}`: { type: 'dir', children: {
+                                    '__init__.py': { type: 'file', content: '' },
+                                    'settings.py': { type: 'file', content: 'SECRET_KEY="dummy"\nDEBUG=True' },
+                                    'urls.py': { type: 'file', content: 'urlpatterns = []' },
+                                    'wsgi.py': { type: 'file', content: '' }
+                                } }
+                            }
+                        };
+                        output = [`Project '${projName}' created successfully (simulated)`];
+                    } else output = ["Invalid directory"];
+                }
+            } else {
+                output = ["Usage: django-admin startproject <project_name>"];
+            }
+        }
+        else if (command === 'python' && args[0] === 'manage.py') {
+            const subcmd = args[1];
+            if (subcmd === 'runserver') {
+                const port = args[2] || '8000';
+                if (serverRunning) {
+                    output = [`Server already running on port ${serverPort}. Use 'stopserver' first.`];
+                } else {
+                    serverRunning = true;
+                    serverPort = port;
+                    serverOutputLines = [];
+                    // Simulate server startup logs
+                    output = [
+                        `Watching for file changes with StatReloader`,
+                        `Performing system checks...`,
+                        ``,
+                        `System check identified no issues (0 silenced).`,
+                        `Django version 4.2.0, using settings 'myproject.settings'`,
+                        `Starting development server at http://127.0.0.1:${port}/`,
+                        `Quit the server with Ctrl+C or type 'stopserver'.`
+                    ];
+                    // Start simulated periodic logs
+                    if (serverInterval) clearInterval(serverInterval);
+                    serverInterval = setInterval(() => {
+                        if (serverRunning) {
+                            const fakeLog = `[${new Date().toLocaleTimeString()}] "GET / HTTP/1.1" 200 12`;
+                            serverOutputLines.push(fakeLog);
+                            // This will be appended to terminal via callback (we'll set up a state callback later)
+                            if (window.appendServerOutput) window.appendServerOutput(fakeLog);
+                        } else {
+                            clearInterval(serverInterval);
+                            serverInterval = null;
+                        }
+                    }, 5000);
                 }
             }
-        }
-        // MKDIR
-        else if (command === "mkdir") {
-            const dirName = args[0];
-            if (!dirName) output = ["mkdir: missing operand"];
+            else if (subcmd === 'makemigrations') {
+                output = [
+                    `Migrations for 'app1':`,
+                    `  apps/app1/migrations/0001_initial.py`,
+                    `    - Create model Item`,
+                    `No changes detected in other apps.`
+                ];
+            }
+            else if (subcmd === 'migrate') {
+                output = [
+                    `Operations to perform:`,
+                    `  Apply all migrations: admin, auth, contenttypes, sessions, app1`,
+                    `Running migrations:`,
+                    `  Applying app1.0001_initial... OK`,
+                    `  Applying contenttypes.0001_initial... OK`,
+                    `  Applying auth.0001_initial... OK`,
+                    `  Applying admin.0001_initial... OK`,
+                    `  Applying sessions.0001_initial... OK`
+                ];
+            }
+            else if (subcmd === 'shell') {
+                output = [
+                    `Python 3.11.0 (simulated)`,
+                    `Django 4.2.0`,
+                    `Type "help", "copyright", "credits" for more information.`,
+                    `(InteractiveConsole)`,
+                    `>>> from app1.models import Item`,
+                    `>>> Item.objects.all()`,
+                    `<QuerySet []>`,
+                    `>>> exit()`
+                ];
+            }
             else {
-                const res = mkdirCommand(newVfs, newPath, dirName);
-                newVfs = res.newVfs;
-                if (!res.success) output = [res.error];
-                else output = [`Directory created: ${dirName}`];
+                output = [`Unknown manage.py command: ${subcmd}`];
             }
         }
-        // RMDIR
-        else if (command === "rmdir") {
-            const dirName = args[0];
-            if (!dirName) output = ["rmdir: missing operand"];
-            else {
-                const res = rmdirCommand(newVfs, newPath, dirName);
-                newVfs = res.newVfs;
-                if (!res.success) output = [res.error];
-                else output = [`Directory removed: ${dirName}`];
-                // If current directory was removed, go to root
-                const stillExists = isDirectory(newVfs, newPath);
-                if (!stillExists && newPath.length > 0) {
-                    newPath = [];
-                    output.push("[Warning] previous directory removed, moved to C:\\");
-                }
+        else if (command === 'stopserver') {
+            if (serverRunning) {
+                serverRunning = false;
+                if (serverInterval) clearInterval(serverInterval);
+                serverInterval = null;
+                output = [`Development server stopped on port ${serverPort}.`];
+                serverPort = null;
+            } else {
+                output = [`No server is currently running.`];
             }
         }
-        // DEL
-        else if (command === "del") {
-            const fileName = args[0];
-            if (!fileName) output = ["del: missing file operand"];
-            else {
-                const res = delCommand(newVfs, newPath, fileName);
-                newVfs = res.newVfs;
-                if (!res.success) output = [res.error];
-                else output = [`Deleted file: ${fileName}`];
-            }
-        }
-        // TYPE / CAT
-        else if (command === "type" || command === "cat") {
-            const fileName = args[0];
-            if (!fileName) output = ["type: missing file name"];
-            else {
-                const res = typeCommand(newVfs, newPath, fileName);
-                if (!res.success) output = [res.output];
-                else output = [res.output];
-            }
-        }
-        // ECHO
-        else if (command === "echo") {
-            output = [args.join(" ") || ""];
-        }
-        // VER
-        else if (command === "ver") {
-            output = ["Microsoft Windows [Version 10.0.22621.3737]"];
-        }
-        // WHOAMI
-        else if (command === "whoami") {
-            output = ["webterminal\\defaultuser"];
-        }
-        // HOSTNAME
-        else if (command === "hostname") {
-            output = ["WIN-TERMINAL"];
-        }
-        // DATE
-        else if (command === "date") {
-            output = [new Date().toLocaleDateString()];
-        }
-        // TIME
-        else if (command === "time") {
-            output = [new Date().toLocaleTimeString()];
-        }
-        // EXIT (soft)
-        else if (command === "exit") {
-            output = ["Terminal session finished. Refresh page to restart shell."];
+        else if (command === 'echo') {
+            output = [args.join(' ') || ''];
         }
         else {
-            output = [`'${command}' is not recognized as an internal or external command, operable program or batch file.`];
+            output = [`Command not recognized: ${command}. Type 'help' for available commands.`];
         }
 
-        return { outputLines: output, newVfs, newPath, clearOnly: false };
+        return { outputLines: output, newVfs, newPath, clear: false };
     };
 
-    // ----- React Terminal Component -----
-    const TerminalEmulator = () => {
-        const [entries, setEntries] = React.useState([]);     // { id, type, promptPath, command, outputLines? }
-        const [currentDir, setCurrentDir] = React.useState([]);  // path array
+    // Main React Component
+    const DjangoTerminal = () => {
+        const [entries, setEntries] = React.useState([]);
+        const [currentPath, setCurrentPath] = React.useState([]);
         const [vfs, setVfs] = React.useState(() => createInitialVFS());
         const [inputValue, setInputValue] = React.useState("");
-        const [history, setHistory] = React.useState([]);      // command history strings
+        const [serverActive, setServerActive] = React.useState(false);
+        const [history, setHistory] = React.useState([]);
         const [historyIndex, setHistoryIndex] = React.useState(-1);
         
-        const terminalEndRef = React.useRef(null);
+        const terminalRef = React.useRef(null);
         const inputRef = React.useRef(null);
-        const scrollContainerRef = React.useRef(null);
 
-        // Helper: format path for prompt display
-        const formatPromptPath = (pathArr) => {
-            if (!pathArr.length) return "C:\\";
-            return "C:\\" + pathArr.join("\\");
-        };
-
-        // Add welcome message on mount
+        // Callback for server to append logs
         React.useEffect(() => {
-            const welcomeMsg = [
-                "Microsoft Windows Web Terminal (React Edition)",
-                "Type 'help' to see available commands. Enjoy full virtual filesystem!",
-                "----------------------------------------------"
+            window.appendServerOutput = (logLine) => {
+                setEntries(prev => [...prev, {
+                    id: Date.now() + '_server',
+                    type: 'output',
+                    lines: [`[Server] ${logLine}`],
+                    serverStyle: true
+                }]);
+                setTimeout(() => {
+                    if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+                }, 50);
+            };
+            return () => { delete window.appendServerOutput; };
+        }, []);
+
+        // Check server state periodically
+        React.useEffect(() => {
+            const interval = setInterval(() => {
+                setServerActive(serverRunning);
+            }, 500);
+            return () => clearInterval(interval);
+        }, []);
+
+        // Welcome message
+        React.useEffect(() => {
+            const welcome = [
+                "Django Terminal Simulator (No Backend Required)",
+                "Run Django commands in a simulated environment.",
+                "Type 'help' to see all commands.",
+                "Try: django-admin startproject blog",
+                "Try: python manage.py runserver",
+                "------------------------------------------------"
             ];
-            const initialEntries = [
-                { id: Date.now() + "_welcome", type: "output", lines: welcomeMsg }
-            ];
-            setEntries(initialEntries);
-            setCurrentDir([]);  // root
-            setHistory([]);
-            setHistoryIndex(-1);
+            setEntries([{ id: Date.now(), type: 'output', lines: welcome }]);
             inputRef.current?.focus();
         }, []);
 
-        // Auto-scroll to bottom on new entries
         React.useEffect(() => {
-            if (scrollContainerRef.current) {
-                scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+            if (terminalRef.current) {
+                terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
             }
-        }, [entries]);
-
-        // Focus input after each render
-        React.useEffect(() => {
-            inputRef.current?.focus();
         }, [entries]);
 
         const handleSubmit = (e) => {
@@ -552,66 +477,66 @@
                 setInputValue("");
                 return;
             }
-            // add to history
+            // Add to history
             setHistory(prev => [...prev, cmd]);
             setHistoryIndex(-1);
-            const promptPathStr = formatPromptPath(currentDir);
-            const commandEntry = {
-                id: Date.now() + "_cmd",
-                type: "command",
-                promptPath: promptPathStr,
-                commandText: cmd
+            
+            // Add command entry
+            const promptStr = formatPath(currentPath);
+            const cmdEntry = {
+                id: Date.now() + '_cmd',
+                type: 'command',
+                prompt: promptStr,
+                text: cmd
             };
             
-            // process command
-            const { outputLines, newVfs, newPath, clearOnly } = processCommand(cmd, currentDir, vfs);
+            // Process command
+            const { outputLines, newVfs, newPath, clear } = handleCommand(cmd, currentPath, vfs);
             
-            if (clearOnly) {
-                // clear terminal screen
+            if (clear) {
                 setEntries([]);
                 setVfs(newVfs);
-                setCurrentDir(newPath);
+                setCurrentPath(newPath);
                 setInputValue("");
                 return;
             }
             
-            const outputEntry = {
-                id: Date.now() + "_out",
-                type: "output",
-                lines: outputLines.length ? outputLines : [" "]
+            const outEntry = {
+                id: Date.now() + '_out',
+                type: 'output',
+                lines: outputLines.length ? outputLines : ["(no output)"]
             };
             
-            setEntries(prev => [...prev, commandEntry, outputEntry]);
-            // Update state for VFS and directory
+            setEntries(prev => [...prev, cmdEntry, outEntry]);
             setVfs(newVfs);
-            setCurrentDir(newPath);
+            setCurrentPath(newPath);
             setInputValue("");
         };
-        
+
         const handleKeyDown = (e) => {
-            if (e.key === "ArrowUp") {
+            if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (history.length === 0) return;
-                let newIndex = historyIndex === -1 ? history.length - 1 : historyIndex - 1;
-                if (newIndex >= 0) {
-                    setHistoryIndex(newIndex);
-                    setInputValue(history[newIndex]);
+                let idx = historyIndex === -1 ? history.length - 1 : historyIndex - 1;
+                if (idx >= 0) {
+                    setHistoryIndex(idx);
+                    setInputValue(history[idx]);
                 }
-            } else if (e.key === "ArrowDown") {
+            } else if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 if (historyIndex !== -1) {
-                    let newIndex = historyIndex + 1;
-                    if (newIndex >= history.length) {
+                    let idx = historyIndex + 1;
+                    if (idx >= history.length) {
                         setHistoryIndex(-1);
                         setInputValue("");
                     } else {
-                        setHistoryIndex(newIndex);
-                        setInputValue(history[newIndex]);
+                        setHistoryIndex(idx);
+                        setInputValue(history[idx]);
                     }
                 }
             }
         };
-        
+
         return (
             <div className="terminal-container">
                 <div className="terminal-header">
@@ -620,28 +545,27 @@
                         <div className="win-btn minimize"></div>
                         <div className="win-btn maximize"></div>
                     </div>
-                    <div className="terminal-title">Windows PowerShell Web Terminal</div>
+                    <div className="terminal-title">🐍 Django Terminal Simulator (Frontend Only)</div>
                 </div>
-                <div className="terminal-screen" ref={scrollContainerRef}>
+                <div className="terminal-screen" ref={terminalRef}>
                     {entries.map(entry => (
                         <div key={entry.id} className="terminal-entry">
-                            {entry.type === "command" && (
+                            {entry.type === 'command' && (
                                 <div className="command-line">
-                                    <span className="prompt">{entry.promptPath}&gt;</span>
-                                    <span className="command-text">{entry.commandText}</span>
+                                    <span className="prompt">{entry.prompt}$</span>
+                                    <span className="command-text">{entry.text}</span>
                                 </div>
                             )}
-                            {entry.type === "output" && entry.lines && entry.lines.map((line, idx) => (
-                                <div key={idx} className={`output-line ${line.toLowerCase().includes('error') || line.includes('not recognized') ? 'error-line' : ''}`}>
+                            {entry.type === 'output' && entry.lines.map((line, idx) => (
+                                <div key={idx} className={`output-line ${entry.serverStyle ? 'sim-server-line' : (line.includes('Error') || line.includes('not recognized') ? 'error-line' : '')}`}>
                                     {line}
                                 </div>
                             ))}
                         </div>
                     ))}
-                    <div ref={terminalEndRef} />
                 </div>
                 <form onSubmit={handleSubmit} className="input-line">
-                    <span className="input-prompt">{formatPromptPath(currentDir)}&gt;</span>
+                    <span className="input-prompt">{formatPath(currentPath)}$</span>
                     <input
                         ref={inputRef}
                         type="text"
@@ -654,11 +578,15 @@
                         autoComplete="off"
                     />
                 </form>
+                <div className="server-status">
+                    <span>🐍 Django Simulator</span>
+                    <span className="server-badge">{serverActive ? `▶ Server running on port ${serverPort} (simulated)` : "⏹ Server stopped"}</span>
+                </div>
             </div>
         );
     };
-    
-    ReactDOM.createRoot(document.getElementById("root")).render(<TerminalEmulator />);
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<DjangoTerminal />);
 </script>
 </body>
 </html>
